@@ -1,0 +1,401 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DataSense-style IIoT Testbed — 5-layer architecture
+#   Layer 1: IoT/IIoT Devices (sensors, cameras, smart plugs)
+#   Layer 2: Network Infrastructure (iiot_net bridge = switch + AP + L3 GW)
+#   Layer 3: Edge (MQTT broker, edge web server, network dump, RADM monitor)
+#   Layer 4: Cloud (cloud broker, log store, GADM global anomaly detection)
+#   Layer 5: Attacker (Kali C2 + Debian bots, Mirai botnet topology)
+# Network: 192.168.1.0/24 (edge/iiot)  +  10.0.0.0/24 (cloud)
+# ═══════════════════════════════════════════════════════════════════════════
+
+networks:
+  iiot_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+  cloud_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24
+
+services:
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 3 — EDGE: MQTT Broker (192.168.1.193)                          ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  mqtt_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: iiot_mqtt_broker
+    hostname: mqtt-broker
+    networks:
+      iiot_net:
+        ipv4_address: 192.168.1.193
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mqtt_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 1 — IoT/IIoT DEVICES: Sensors (8 types, 192.168.1.10-23)       ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  sensor_weather:
+    build: ./sensor
+    container_name: sensor_weather
+    hostname: sensor-weather
+    environment:
+      - SENSOR_TYPE=weather
+      - SENSOR_ID=weather_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=2
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.10 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_water:
+    build: ./sensor
+    container_name: sensor_water
+    hostname: sensor-water
+    environment:
+      - SENSOR_TYPE=water
+      - SENSOR_ID=water_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=3
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.11 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_soil:
+    build: ./sensor
+    container_name: sensor_soil
+    hostname: sensor-soil
+    environment:
+      - SENSOR_TYPE=soil
+      - SENSOR_ID=soil_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=4
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.12 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_gas:
+    build: ./sensor
+    container_name: sensor_gas
+    hostname: sensor-gas
+    environment:
+      - SENSOR_TYPE=gas
+      - SENSOR_ID=gas_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=5
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.14 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_sound:
+    build: ./sensor
+    container_name: sensor_sound
+    hostname: sensor-sound
+    environment:
+      - SENSOR_TYPE=sound
+      - SENSOR_ID=sound_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=2
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.15 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_motion:
+    build: ./sensor
+    container_name: sensor_motion
+    hostname: sensor-motion
+    environment:
+      - SENSOR_TYPE=motion
+      - SENSOR_ID=motion_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=1
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.21 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_rfid:
+    build: ./sensor
+    container_name: sensor_rfid
+    hostname: sensor-rfid
+    environment:
+      - SENSOR_TYPE=rfid
+      - SENSOR_ID=rfid_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=4
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.22 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  sensor_flame:
+    build: ./sensor
+    container_name: sensor_flame
+    hostname: sensor-flame
+    environment:
+      - SENSOR_TYPE=flame
+      - SENSOR_ID=flame_01
+      - MQTT_BROKER=192.168.1.193
+      - PUBLISH_INTERVAL=2
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.23 }
+    depends_on: [mqtt_broker]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 1 — IoT/IIoT DEVICES: Cameras (4, 192.168.1.50-57)             ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  camera_yi:
+    build: ./camera
+    container_name: camera_yi
+    hostname: camera-yi
+    environment: [CAMERA_ID=yi_camera_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.50 }
+    ports: ["8050:80"]
+    restart: unless-stopped
+
+  camera_blurams:
+    build: ./camera
+    container_name: camera_blurams
+    hostname: camera-blurams
+    environment: [CAMERA_ID=blurams_camera_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.52 }
+    ports: ["8052:80"]
+    restart: unless-stopped
+
+  camera_geeni:
+    build: ./camera
+    container_name: camera_geeni
+    hostname: camera-geeni
+    environment: [CAMERA_ID=geeni_camera_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.55 }
+    ports: ["8055:80"]
+    restart: unless-stopped
+
+  camera_wisenet:
+    build: ./camera
+    container_name: camera_wisenet
+    hostname: camera-wisenet
+    environment: [CAMERA_ID=wisenet_camera_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.57 }
+    ports: ["8057:80"]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 1 — IoT/IIoT DEVICES: Smart Plugs (4, 192.168.1.80-93)         ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  plug_cameras:
+    build: ./smartplug
+    container_name: plug_cameras
+    hostname: plug-cameras
+    environment: [PLUG_ID=plug_cameras_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.80 }
+    ports: ["8080:8080"]
+    restart: unless-stopped
+
+  plug_mqtt:
+    build: ./smartplug
+    container_name: plug_mqtt
+    hostname: plug-mqtt
+    environment: [PLUG_ID=plug_mqtt_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.82 }
+    ports: ["8082:8080"]
+    restart: unless-stopped
+
+  plug_motion:
+    build: ./smartplug
+    container_name: plug_motion
+    hostname: plug-motion
+    environment: [PLUG_ID=plug_motion_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.85 }
+    ports: ["8085:8080"]
+    restart: unless-stopped
+
+  plug_sensors:
+    build: ./smartplug
+    container_name: plug_sensors
+    hostname: plug-sensors
+    environment: [PLUG_ID=plug_sensors_01]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.93 }
+    ports: ["8093:8080"]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 3 — EDGE: Victim / Edge Device (192.168.1.195)                 ║
+  # ║   Vulnerable Flask portal + SSH + Telnet (= DataSense's Edge Device) ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  victim:
+    build: ./victim
+    container_name: iiot_edge_device
+    hostname: iiot-edge-device
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.195 }
+    ports:
+      - "80:80"
+      - "2222:22"
+      - "2323:23"
+    # ── IoT-class resource limits (simulates a low-end embedded edge device)
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.05
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 3 — EDGE: Network Dump (DataSense's "Network Dump" role)       ║
+  # ║   tcpdump rotating pcap files of all IIoT traffic                    ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  network_dump:
+    build: ./network_dump
+    container_name: iiot_network_dump
+    hostname: network-dump
+    network_mode: host
+    privileged: true
+    cap_add: [NET_RAW, NET_ADMIN]
+    environment:
+      - SUBNET=192.168.1.0/24
+      - DURATION=60         # seconds per pcap file (short for thesis demos)
+      - MAX_FILES=20        # 20 × 60s = 20 min rolling history
+      - SNAPLEN=0           # 0 = full packet
+    volumes:
+      - ./network_dump/captures:/captures
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 3 — EDGE: RADM Monitor (anomaly detector)                      ║
+  # ║   sniffs the bridge (= port mirroring on the Switch), pushes to GADM ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  monitor:
+    build: ./monitor
+    container_name: iiot_radm
+    hostname: iiot-radm
+    network_mode: host
+    privileged: true
+    cap_add: [NET_RAW, NET_ADMIN]
+    environment:
+      - GADM_URL=http://127.0.0.1:5000/alert
+    volumes:
+      - ./monitor/models:/app/models:ro
+    depends_on: [mqtt_broker, victim]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 4 — CLOUD: Cloud Message Broker (10.0.0.10)                    ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  cloud_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: cloud_broker
+    hostname: cloud-broker
+    networks:
+      cloud_net: { ipv4_address: 10.0.0.10 }
+    ports: ["1884:1883"]
+    volumes:
+      - ./cloud_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 4 — CLOUD: Log Store (Elasticsearch-equivalent, 10.0.0.20)     ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  cloud_logger:
+    build: ./cloud_logger
+    container_name: cloud_logger
+    hostname: cloud-logger
+    networks:
+      cloud_net: { ipv4_address: 10.0.0.20 }
+    ports: ["5001:5001"]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 4 — CLOUD: GADM Global Anomaly Detection Module (10.0.0.30)    ║
+  # ║   Receives alerts from edge RADM, persists, forwards to logger       ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  gadm:
+    build: ./cloud_gadm
+    container_name: cloud_gadm
+    hostname: gadm
+    networks:
+      cloud_net: { ipv4_address: 10.0.0.30 }
+    environment:
+      - CLOUD_LOGGER=http://10.0.0.20:5001
+    ports: ["5000:5000"]
+    depends_on: [cloud_logger]
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 5 — ATTACKER: Mirai C2 (Kali, 192.168.1.100)                   ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  attacker_c2:
+    build: ./attacker_c2
+    container_name: attacker_c2
+    hostname: kali-c2
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.100 }
+    cap_add: [NET_RAW, NET_ADMIN]
+    ports:
+      - "5300:5300"        # operator HTTP control plane (POST /attack)
+    restart: unless-stopped
+
+  # ╔═══════════════════════════════════════════════════════════════════════╗
+  # ║ LAYER 5 — ATTACKER: Mirai Bots (Debian, 192.168.1.101-103)           ║
+  # ╚═══════════════════════════════════════════════════════════════════════╝
+  attacker_bot1:
+    build: ./attacker_bot
+    container_name: attacker_bot1
+    hostname: bot1
+    environment: [BOT_ID=bot1, C2_HOST=192.168.1.100]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.101 }
+    cap_add: [NET_RAW, NET_ADMIN]
+    privileged: true        # needed so ettercap can toggle /proc/sys/net/ipv6
+    sysctls:
+      - net.ipv4.ip_forward=1
+    depends_on: [attacker_c2]
+    restart: unless-stopped
+
+  attacker_bot2:
+    build: ./attacker_bot
+    container_name: attacker_bot2
+    hostname: bot2
+    environment: [BOT_ID=bot2, C2_HOST=192.168.1.100]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.102 }
+    cap_add: [NET_RAW, NET_ADMIN]
+    privileged: true        # needed so ettercap can toggle /proc/sys/net/ipv6
+    sysctls:
+      - net.ipv4.ip_forward=1
+    depends_on: [attacker_c2]
+    restart: unless-stopped
+
+  attacker_bot3:
+    build: ./attacker_bot
+    container_name: attacker_bot3
+    hostname: bot3
+    environment: [BOT_ID=bot3, C2_HOST=192.168.1.100]
+    networks:
+      iiot_net: { ipv4_address: 192.168.1.103 }
+    cap_add: [NET_RAW, NET_ADMIN]
+    privileged: true        # needed so ettercap can toggle /proc/sys/net/ipv6
+    sysctls:
+      - net.ipv4.ip_forward=1
+    depends_on: [attacker_c2]
+    restart: unless-stopped

@@ -1,0 +1,36 @@
+# ─── Rotating packet captures (heavy, regenerated on every run) ───────────
+network_dump/captures/*.pcap
+network_dump/captures/*.pcapng
+
+# ─── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ─── OS / IDE noise ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# ─── Docker ───────────────────────────────────────────────────────────────
+*.log
+docker-compose.override.yml
+
+# ─── PowerShell-typo empty stub files ─────────────────────────────────────
+$null
+cls
+docker
+
+# ─── Local secrets / env ──────────────────────────────────────────────────
+.env
+.env.local
+*.pem
+*.key

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IIoT Edge Device — Management Portal</title>
+<style>
+  body { font-family: monospace; background: #1a1a2e; color: #e0e0e0; margin: 40px; }
+  h1   { color: #00d4ff; }
+  .box { border: 1px solid #00d4ff; padding: 20px; margin: 20px 0; border-radius: 4px; }
+  a    { color: #00d4ff; }
+  .warn{ color: #ff6b35; }
+  table{ border-collapse: collapse; width: 100%; }
+  td,th{ border: 1px solid #333; padding: 8px; }
+  th   { background: #0f3460; }
+</style>
+</head>
+<body>
+<h1>&#x1F4E1; IIoT Edge Device — Management Portal</h1>
+<div class="box">
+  <h3>System Information</h3>
+  <table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td>Device Name</td><td>iiot-edge-device</td></tr>
+    <tr><td>Firmware</td><td>v3.1.4</td></tr>
+    <tr><td>IP Address</td><td>192.168.1.195</td></tr>
+    <tr><td>Status</td><td style="color:#00ff88">&#x25CF; Online</td></tr>
+    <tr><td>Connected Sensors</td><td>6</td></tr>
+    <tr><td>MQTT Broker</td><td>192.168.1.193:1883</td></tr>
+  </table>
+</div>
+<div class="box">
+  <h3>Quick Links</h3>
+  <ul>
+    <li><a href="/api/status">API Status (JSON)</a></li>
+    <li><a href="/admin">Admin Panel</a></li>
+    <li><a href="/login">Login</a></li>
+  </ul>
+</div>
+<div class="box warn">
+  <strong>WARNING:</strong> This is a simulated IIoT edge device for research purposes only.
+  Default credentials are intentionally weak for attack simulation.
+</div>
+</body>
+</html>

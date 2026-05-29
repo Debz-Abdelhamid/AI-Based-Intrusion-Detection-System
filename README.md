@@ -27,7 +27,7 @@
 9. [How to capture screenshots for a thesis demo](#how-to-capture-screenshots-for-a-thesis-demo)
 10. [Project layout](#project-layout)
 11. [Troubleshooting](#troubleshooting)
-12. [Authorship & citation](#authorship--citation)
+12. [Authorship](#authorship)
 
 ---
 
@@ -37,7 +37,7 @@ This repository is the **complete experimental testbed** for the Master's thesis
 
 > **Debz Abdelhamid — *A Hybrid Machine Learning-Based Intrusion Detection System
 > for Zero-Day Attacks in the Industrial Internet of Things***
-> Supervisor: Dr. Hayet Djellali (MCA) — Université Badji Mokhtar, Annaba — 2025/2026
+> Université Badji Mokhtar, Annaba — 2025/2026
 
 The hybrid IDS proposed in the thesis is a **two-stage cascade**:
 
@@ -62,47 +62,9 @@ This repo contains everything required to:
 The testbed reproduces a 5-layer industrial reference architecture inside Docker, with
 two isolated bridge networks modelling the OT/IT separation found on real industrial sites.
 
-```
-                          ┌──────────────────────────────────────────┐
-                          │            LAYER 4 — CLOUD               │
-                          │         cloud_net (10.0.0.0/24)          │
-                          │                                          │
-                          │   cloud_broker      cloud_logger         │
-                          │   10.0.0.10         10.0.0.20            │
-                          │       │                  ▲                │
-                          │       └───►  GADM ───────┘                │
-                          │              10.0.0.30                    │
-                          └──────────────────▲───────────────────────┘
-                                             │ POST /alert
-═════════════════════════════════════════════════════════════════════
-                                             │
-                          ┌──────────────────┴───────────────────────┐
-                          │            LAYER 3 — EDGE                │
-                          │                                          │
-                          │   mqtt_broker        RADM (★ AE_5s/10s)  │
-                          │   192.168.1.193      host-network        │
-                          │                                          │
-                          │   victim portal      network_dump        │
-                          │   192.168.1.195      (rotating tcpdump)  │
-                          └──────────────────────────────────────────┘
-                                             │
-═════════════════════════════════════════════════════════════════════
-                                             │
-                          ┌──────────────────┴───────────────────────┐
-                          │  LAYER 2 — Network   iiot_net 192.168.1.0/24 │
-                          └──┬───────────────────────────────────┬───┘
-                             │                                   │
-═════════════════════════════════════════════════════════════════════
-   ┌─────────────────────────┴────────────┐   ┌──────────────────┴──────────────┐
-   │       LAYER 1 — IoT/IIoT Devices     │   │   LAYER 5 — Mirai-style Botnet  │
-   │                                      │   │                                 │
-   │  8 sensors  · 4 IP cameras           │   │   attacker_c2 (Kali)            │
-   │  4 smart plugs                       │   │   192.168.1.100                 │
-   │  (.10 → .93)                         │   │   CnC TCP/2300 · HTTP :5300     │
-   │                                      │   │                                 │
-   │  All publish MQTT to broker          │   │   bot1 .101  bot2 .102  bot3 .103│
-   └──────────────────────────────────────┘   └─────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/images/01-testbed-architecture.png" alt="InduSentry IIoT Testbed Architecture" width="900"/>
+</p>
 
 **Key properties:**
 
@@ -184,6 +146,12 @@ recon · brute · web · nikto · exec
 | 5 | Attacker | iiot_net | 4 |
 | **Total** | | | **27 containers · 2 networks** |
 
+### At-a-glance reference card
+
+<p align="center">
+  <img src="docs/images/03-overview-card.png" alt="InduSentry quick reference — layer summary, key properties, and attack verbs" width="950"/>
+</p>
+
 ---
 
 ## Network map
@@ -214,34 +182,9 @@ recon · brute · web · nikto · exec
 The detection pipeline is the **first stage of the InduSentry hybrid IDS** described in
 the thesis. It runs entirely passively on the iiot_net bridge.
 
-```
-                LIVE IIoT NETWORK TRAFFIC (iiot_net bridge)
-                                  │
-                                  ▼
-                  PACKET SNIFFING (Scapy, BPF: ip net 192.168.1.0/24)
-                                  │
-                  ┌───────────────┴───────────────┐
-                  ▼                               ▼
-            5-second window                10-second window
-            37-feature extract             37-feature extract
-                  │                               │
-                  ▼                               ▼
-            QuantileTransformer            QuantileTransformer
-                  │                               │
-                  ▼                               ▼
-            ★ AE_5s ★                       ★ AE_10s ★
-            threshold ~0.036                threshold ~0.057
-                  │                               │
-                  └──────── OR-ENSEMBLE ──────────┘
-                                  │
-                  ┌──── benign?              anomaly? ────┐
-                  ▼                                       ▼
-            no log / discard                  ALERT → POST /alert
-                                              (HTTPS to cloud GADM)
-                                                          │
-                                                          ▼
-                                              cloud_logger persists
-```
+<p align="center">
+  <img src="docs/images/02-detection-pipeline.png" alt="InduSentry Detection Pipeline — RADM AutoEncoder + Cloud GADM cascade" width="900"/>
+</p>
 
 **37 network features extracted per window** (matching the AE training schema):
 
@@ -353,7 +296,7 @@ The C2 in turn dispatches the command to one or more bots over the TCP/2300 chan
 | `web` | sqlmap (`--technique=BU --threads=1`) | `web <ip>` |
 | `nikto` | nikto (installed from upstream git) | `nikto <ip>` |
 
-### MITM family (DataSense matrix)
+### MITM family
 
 | Verb | Tool used | What it does |
 |---|---|---|
@@ -693,17 +636,14 @@ Then `docker compose up -d --force-recreate network_dump`.
 
 ---
 
-## Authorship & citation
+## Authorship
 
-This testbed and the InduSentry hybrid IDS are part of:
+This testbed and the InduSentry hybrid IDS were designed and implemented by:
 
-> **Debz Abdelhamid.** *A Hybrid Machine Learning-Based Intrusion Detection System for
+> **Debz Abdelhamid** — *A Hybrid Machine Learning-Based Intrusion Detection System for
 > Zero-Day Attacks in the Industrial Internet of Things.* Master's thesis, Université
 > Badji Mokhtar — Annaba, Faculté de Technologie, Département d'Informatique, Réseaux
-> et Sécurité Informatique. Supervisor: Dr. Hayet Djellali (MCA). Academic year
-> 2025/2026.
-
-If you use this testbed in your own work, please cite the thesis.
+> et Sécurité Informatique. Academic year 2025/2026.
 
 **Companion repositories** (separate):
 

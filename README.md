@@ -64,6 +64,8 @@ two isolated bridge networks modelling the OT/IT separation found on real indust
 
 <p align="center">
   <img src="docs/images/01-testbed-architecture.png" alt="InduSentry IIoT Testbed Architecture" width="900"/>
+     <br/>
+     <em>Figure 1 - InduSentry IIoT Testbed Architecture</em>
 </p>
 
 **Key properties:**
@@ -150,6 +152,8 @@ recon · brute · web · nikto · exec
 
 <p align="center">
   <img src="docs/images/03-overview-card.png" alt="InduSentry quick reference — layer summary, key properties, and attack verbs" width="950"/>
+     <br/>
+     <em>Figure 2 - InduSentry quick reference - layer summary, key properties, and attack verbs</em>
 </p>
 
 ---
@@ -184,6 +188,8 @@ the thesis. It runs entirely passively on the iiot_net bridge.
 
 <p align="center">
   <img src="docs/images/02-detection-pipeline.png" alt="InduSentry Detection Pipeline — RADM AutoEncoder + Cloud GADM cascade" width="900"/>
+     <br/>
+     <em>Figure 3 - InduSentry Detection Pipeline - RADM AutoEncoder + Cloud GADM cascade</em>
 </p>
 
 **37 network features extracted per window** (matching the AE training schema):
